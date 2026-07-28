@@ -20,12 +20,12 @@ import {
   CHANNELS_PER_TYPE,
   POST_TYPES,
   SCHEDULE_SLOTS,
-  generateDemoCaptions,
   nextId,
   type ChatMessage,
   type ChatPhoto,
   type PostTypeId,
 } from '@/lib/chat';
+import { generateCaptions } from '@/lib/api';
 import { useOnboarding } from '@/lib/onboarding';
 
 export default function ChatScreen() {
@@ -50,6 +50,7 @@ export default function ChatScreen() {
   const [chosenCaption, setChosenCaption] = useState<string | null>(null);
   const [channels, setChannels] = useState<string[]>(['instagram', 'facebook']);
   const [postType, setPostType] = useState<PostTypeId>('post');
+  const [lastRequest, setLastRequest] = useState('');
   const [celebrate, setCelebrate] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -72,28 +73,47 @@ export default function ChatScreen() {
     if (!text && photos.length === 0) return;
 
     const userMsg: ChatMessage = { id: nextId(), from: 'user', text: text || undefined, photos };
-    setMessages((m) => [...m, userMsg]);
+    setLastRequest(text);
+    setMessages((m) => [...m, userMsg, { id: nextId(), from: 'centi', kind: 'format' }]);
     setDraft('');
     setPhotos([]);
+    scrollDown();
+  };
+
+  const chooseFormat = (type: PostTypeId) => {
+    setPostType(type);
+    const label = type === 'post' ? 'Een post' : type === 'story' ? 'Een story' : 'Een reel';
+    setMessages((m) => [...m, { id: nextId(), from: 'user', text: `${label} graag!` }]);
     setThinking(true);
     scrollDown();
 
-    // DEMO: lokaal gegenereerd; later een backend-call naar Claude.
-    setTimeout(() => {
-      const captions = generateDemoCaptions(state.brand, text);
+    // Via de backend (Claude Haiku) zodra die geconfigureerd is; anders demo.
+    void (async () => {
+      const captions = await generateCaptions({
+        brand: state.brand,
+        request: lastRequest,
+        postType: type,
+      });
+      // Kleine pauze zodat de typ-indicator zichtbaar is
+      await new Promise((r) => setTimeout(r, 900));
       setMessages((m) => [
         ...m,
         {
           id: nextId(),
           from: 'centi',
           kind: 'text',
-          text: 'Kijk eens! Drie voorstellen in jouw stijl. Tik je favoriet aan. 👇',
+          text:
+            type === 'story'
+              ? 'Lekker kort en pakkend, zoals een story hoort. Tik je favoriet aan. 👇'
+              : type === 'reel'
+                ? 'Met een hook die kijkers vasthoudt. Tik je favoriet aan. 👇'
+                : 'Kijk eens! Drie voorstellen in jouw stijl. Tik je favoriet aan. 👇',
         },
         { id: nextId(), from: 'centi', kind: 'captions', captions },
       ]);
       setThinking(false);
       scrollDown();
-    }, 1600);
+    })();
   };
 
   const chooseCaption = (caption: string) => {
@@ -160,7 +180,7 @@ export default function ChatScreen() {
               setChannels((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]))
             }
             postType={postType}
-            setPostType={setPostType}
+            onChooseFormat={chooseFormat}
           />
         ))}
         {thinking ? (
@@ -220,7 +240,7 @@ function MessageBubble({
   channels,
   toggleChannel,
   postType,
-  setPostType,
+  onChooseFormat,
 }: {
   msg: ChatMessage;
   onChooseCaption: (c: string) => void;
@@ -228,7 +248,7 @@ function MessageBubble({
   channels: string[];
   toggleChannel: (id: string) => void;
   postType: PostTypeId;
-  setPostType: (t: PostTypeId) => void;
+  onChooseFormat: (t: PostTypeId) => void;
 }) {
   if (msg.from === 'user') {
     return (
@@ -257,6 +277,30 @@ function MessageBubble({
     );
   }
 
+  if (msg.kind === 'format') {
+    return (
+      <View style={styles.centiRow}>
+        <View style={{ flex: 1, gap: Spacing.sm }}>
+          <Centi size={40} message="Leuk! Eerst even dit: wordt het een post, een story of een reel? Dan schrijf ik de captions meteen in het juiste ritme." />
+          <View style={styles.chipsRow}>
+            {POST_TYPES.map((t) => {
+              const active = postType === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => onChooseFormat(t.id)}
+                  style={[styles.typeChip, active && styles.typeChipActive]}>
+                  <Text style={styles.typeChipEmoji}>{t.emoji}</Text>
+                  <Text style={[styles.chipText, active && styles.typeChipTextActive]}>{t.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   if (msg.kind === 'captions') {
     return (
       <View style={styles.captionList}>
@@ -274,21 +318,7 @@ function MessageBubble({
     return (
       <View style={styles.centiRow}>
         <View style={{ flex: 1, gap: Spacing.sm }}>
-          <Centi size={40} message="Topkeuze! Wordt het een post, story of reel? En waar en wanneer plaatsen we hem?" />
-          <View style={styles.chipsRow}>
-            {POST_TYPES.map((t) => {
-              const active = postType === t.id;
-              return (
-                <Pressable
-                  key={t.id}
-                  onPress={() => setPostType(t.id)}
-                  style={[styles.typeChip, active && styles.typeChipActive]}>
-                  <Text style={styles.typeChipEmoji}>{t.emoji}</Text>
-                  <Text style={[styles.chipText, active && styles.typeChipTextActive]}>{t.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Centi size={40} message="Topkeuze! Op welke kanalen en wanneer plaatsen we hem?" />
           <View style={styles.chipsRow}>
             {CHANNELS.map((ch) => {
               const supported = CHANNELS_PER_TYPE[postType].includes(ch.id);

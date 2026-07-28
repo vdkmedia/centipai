@@ -8,6 +8,7 @@ export interface ChatPhoto {
 export type ChatMessage =
   | { id: string; from: 'user'; text?: string; photos?: ChatPhoto[] }
   | { id: string; from: 'centi'; kind: 'text'; text: string }
+  | { id: string; from: 'centi'; kind: 'format' }
   | { id: string; from: 'centi'; kind: 'captions'; captions: string[] }
   | { id: string; from: 'centi'; kind: 'schedule'; caption: string }
   | {
@@ -32,7 +33,11 @@ export function nextId(): string {
  * foto + brandprofiel + buildRulesPrompt(customRules) naar onze backend,
  * die met Haiku 4.5 (en Sonnet waar nodig) captions genereert.
  */
-export function generateDemoCaptions(brand: BrandProfile, request: string): string[] {
+export function generateDemoCaptions(
+  brand: BrandProfile,
+  request: string,
+  postType: PostTypeId = 'post',
+): string[] {
   // De prompt die straks naar de backend gaat; nu alleen ter illustratie.
   void buildRulesPrompt(brand.customRules);
 
@@ -53,6 +58,22 @@ export function generateDemoCaptions(brand: BrandProfile, request: string): stri
     `${capitalize(subject)}, met zorg bereid door het team van ${name}.${emoji('✨')}`,
     `Nieuw op de kaart: ${subject}. Reserveren kan via de link in onze bio.`,
   ];
+
+  // Story's zijn kort en direct; reels openen met een hook.
+  if (postType === 'story') {
+    return [
+      `${capitalize(subject)}!${emoji('🔥')} Swipe up, vandaag bij ${name}.`,
+      `Nu te scoren: ${subject}.${emoji('😍')}`,
+      `${u ? 'Heeft u' : 'Heb je'} dit al gezien?${emoji('👀')} ${capitalize(subject)}!`,
+    ];
+  }
+  if (postType === 'reel') {
+    return [
+      `POV: ${u ? 'u ontdekt' : 'je ontdekt'} ${subject} bij ${name}.${emoji('🤤')}`,
+      `Wacht tot het einde…${emoji('👀')} ${capitalize(subject)} zoals ${u ? 'u die' : 'je die'} nog niet zag!`,
+      `3 redenen waarom ${subject} viraal gaat.${emoji('🎬')} Nummer 2 verrast ${u ? 'u' : 'je'}!`,
+    ];
+  }
 
   const tone = brand.tone ?? 3;
   const base = tone <= 2 ? personal : tone >= 4 ? business : [personal[0], business[1], business[2]];
