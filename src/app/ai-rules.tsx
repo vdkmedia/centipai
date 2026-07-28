@@ -6,7 +6,6 @@ import { Centi } from '@/components/ui/centi';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Screen } from '@/components/ui/screen';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { SYSTEM_RULES } from '@/lib/caption-rules';
 import { useOnboarding } from '@/lib/onboarding';
 
 /**
@@ -69,16 +68,6 @@ export default function AiRulesScreen() {
           ))}
         </View>
       )}
-
-      <Text style={styles.sectionTitle}>Vaste regels van CentipAI</Text>
-      <View style={styles.ruleList}>
-        {SYSTEM_RULES.map((rule) => (
-          <View key={rule} style={[styles.ruleCard, styles.systemRule]}>
-            <Text style={styles.lock}>🔒</Text>
-            <Text style={[styles.ruleText, styles.systemRuleText]}>{rule}</Text>
-          </View>
-        ))}
-      </View>
     </Screen>
   );
 }
@@ -118,10 +107,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     backgroundColor: Colors.card,
   },
-  systemRule: { backgroundColor: Colors.backgroundSoft, borderColor: Colors.backgroundSoft },
   ruleText: { flex: 1, fontSize: 14, color: Colors.text, lineHeight: 20 },
-  systemRuleText: { color: Colors.textSecondary },
-  lock: { fontSize: 16 },
   deleteBtn: {
     width: 28,
     height: 28,
