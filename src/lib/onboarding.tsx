@@ -19,6 +19,12 @@ export interface BrandProfile {
   /** Vraag 4 — taal van de captions + emoji-gebruik */
   language: 'nl' | 'en' | 'de' | 'fr' | null;
   useEmoji: boolean;
+  /**
+   * Eigen AI-regels waarmee de gebruiker Centi traint, bijv.
+   * "Gebruik altijd emoticons, maar nooit 🙏". Elke regel is los verwijderbaar
+   * en wordt bij elke caption-generatie aan de prompt toegevoegd.
+   */
+  customRules: string[];
 }
 
 export interface OnboardingState {
@@ -36,6 +42,7 @@ const EMPTY: OnboardingState = {
     formOfAddress: null,
     language: null,
     useEmoji: true,
+    customRules: [],
   },
 };
 
@@ -43,6 +50,8 @@ interface OnboardingContextValue {
   state: OnboardingState;
   setAccountType: (t: AccountType) => void;
   updateBrand: (patch: Partial<BrandProfile>) => void;
+  addRule: (rule: string) => void;
+  removeRule: (index: number) => void;
   reset: () => void;
 }
 
@@ -74,6 +83,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       state,
       setAccountType: (accountType) => setState((s) => ({ ...s, accountType })),
       updateBrand: (patch) => setState((s) => ({ ...s, brand: { ...s.brand, ...patch } })),
+      addRule: (rule) =>
+        setState((s) => {
+          const trimmed = rule.trim();
+          if (!trimmed || s.brand.customRules.includes(trimmed)) return s;
+          return { ...s, brand: { ...s.brand, customRules: [...s.brand.customRules, trimmed] } };
+        }),
+      removeRule: (index) =>
+        setState((s) => ({
+          ...s,
+          brand: { ...s.brand, customRules: s.brand.customRules.filter((_, i) => i !== index) },
+        })),
       reset: () => setState(EMPTY),
     }),
     [state],

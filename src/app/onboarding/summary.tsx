@@ -23,13 +23,14 @@ export default function SummaryScreen() {
   const { brand } = state;
 
   const rows: { label: string; value: string }[] = [
-    { label: 'Bedrijf', value: brand.companyName || '—' },
+    { label: 'Bedrijf', value: brand.companyName || 'Nog niet ingevuld' },
     { label: 'Website', value: brand.website || 'Niet opgegeven' },
-    { label: 'Branche', value: brand.industry ? INDUSTRY_LABELS[brand.industry] : '—' },
-    { label: 'Toon', value: brand.tone ? TONE_LABELS[brand.tone] : '—' },
+    { label: 'Branche', value: brand.industry ? INDUSTRY_LABELS[brand.industry] : 'Nog niet ingevuld' },
+    { label: 'Toon', value: brand.tone ? TONE_LABELS[brand.tone] : 'Nog niet ingevuld' },
     { label: 'Aanspreekvorm', value: brand.formOfAddress === 'u' ? 'U' : 'Je & jij' },
-    { label: 'Taal', value: brand.language ? LANGUAGE_LABELS[brand.language] : '—' },
+    { label: 'Taal', value: brand.language ? LANGUAGE_LABELS[brand.language] : 'Nog niet ingevuld' },
     { label: 'Emoji', value: brand.useEmoji ? 'Ja' : 'Nee' },
+    { label: 'Eigen AI-regels', value: `${brand.customRules.length}` },
   ];
 
   return (
@@ -37,6 +38,11 @@ export default function SummaryScreen() {
       footer={
         <View style={styles.footer}>
           <GradientButton title="Kies je abonnement" onPress={() => router.push('/pricing')} />
+          <GradientButton
+            title="Centi trainen (optioneel)"
+            variant="outline"
+            onPress={() => router.push('/ai-rules')}
+          />
           <GradientButton
             title="Profiel aanpassen"
             variant="outline"

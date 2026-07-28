@@ -35,13 +35,13 @@ export default function Welcome() {
           </LinearGradient>
         </View>
         <Text style={styles.tagline}>
-          Plan je social media posts met AI.{'\n'}Centi schrijft captions in jouw stijl — jij keurt goed.
+          Plan je social media posts met AI.{'\n'}Centi schrijft captions in jouw stijl en jij keurt goed.
         </Text>
       </View>
 
       <View style={styles.usps}>
         <Usp emoji="📸" text="Drop je foto, kies je favoriete caption" />
-        <Usp emoji="🗓️" text="Plan in wanneer jij wilt — of laat Centi het beste moment kiezen" />
+        <Usp emoji="🗓️" text="Plan in wanneer jij wilt, of laat Centi het beste moment kiezen" />
         <Usp emoji="✅" text="Agency zet klaar, de ondernemer keurt goed" />
         <Usp emoji="🚀" text="Publiceer naar Instagram, Facebook, TikTok, LinkedIn en meer" />
       </View>

@@ -28,7 +28,7 @@ export default function WebsiteScreen() {
           message={
             forClient
               ? 'Voor welke klant maken we het eerste brandprofiel? Met de website leer ik de stijl al kennen.'
-              : 'Vertel me over je bedrijf. Met je website leer ik je stijl alvast kennen — de rest vraag ik in 4 korte vragen.'
+              : 'Vertel me over je bedrijf. Met je website leer ik je stijl alvast kennen. De rest vraag ik in 4 korte vragen.'
           }
         />
       </View>

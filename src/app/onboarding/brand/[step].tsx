@@ -21,7 +21,7 @@ const INDUSTRIES = [
 
 const TONES = [
   { value: 1, label: 'Heel persoonlijk', subtitle: '„Wat een topavond met jullie! 😍 Tot snel!"' },
-  { value: 2, label: 'Persoonlijk', subtitle: '„We hebben er weer zin in — kom je langs?"' },
+  { value: 2, label: 'Persoonlijk', subtitle: '„We hebben er weer zin in, kom je langs?"' },
   { value: 3, label: 'Neutraal', subtitle: '„Vanaf vrijdag verkrijgbaar: onze nieuwe kaart."' },
   { value: 4, label: 'Zakelijk', subtitle: '„Graag informeren we je over onze nieuwe diensten."' },
   { value: 5, label: 'Strikt zakelijk', subtitle: '„Ons kantoor adviseert u graag over de mogelijkheden."' },
@@ -31,7 +31,7 @@ const QUESTION_META: Record<number, { centi: string; heading: string }> = {
   1: { centi: 'Wat voor soort bedrijf is het? Een advocatenkantoor klinkt nou eenmaal anders dan een restaurant. 😉', heading: 'Vraag 1 · Type bedrijf' },
   2: { centi: 'Hoe wil je klinken in je captions? Kies de toon die het beste past.', heading: 'Vraag 2 · Tone of voice' },
   3: { centi: 'Spreek je je volgers aan met "je" of met "u"?', heading: 'Vraag 3 · Je of u' },
-  4: { centi: 'Laatste vraag! In welke taal schrijf ik je captions — en mag ik emoji gebruiken?', heading: 'Vraag 4 · Taal & emoji' },
+  4: { centi: 'Laatste vraag! In welke taal schrijf ik je captions, en mag ik emoji gebruiken?', heading: 'Vraag 4 · Taal & emoji' },
 };
 
 export default function BrandQuestion() {
@@ -97,14 +97,14 @@ export default function BrandQuestion() {
           <OptionCard
             emoji="😊"
             title="Je & jij"
-            subtitle="Informeel en toegankelijk — past bij de meeste consumentenmerken."
+            subtitle="Informeel en toegankelijk. Past bij de meeste consumentenmerken."
             selected={brand.formOfAddress === 'je'}
             onPress={() => updateBrand({ formOfAddress: 'je' })}
           />
           <OptionCard
             emoji="🎩"
             title="U"
-            subtitle="Formeel en respectvol — past bij juridische, financiële en premium merken."
+            subtitle="Formeel en respectvol. Past bij juridische, financiële en premium merken."
             selected={brand.formOfAddress === 'u'}
             onPress={() => updateBrand({ formOfAddress: 'u' })}
           />

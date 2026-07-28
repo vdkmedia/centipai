@@ -39,12 +39,13 @@ Dit profiel wordt bij **elke** caption-generatie meegestuurd (en gecachet — zi
 - Per post eenvoudig **aanvinken op welke kanalen** hij gepubliceerd wordt (FB / IG / Threads / TikTok / LinkedIn / GMB), met per kanaal aangepaste versies (bijv. hashtags wel op IG, niet op LinkedIn).
 - Statussen: **Concept → Wacht op goedkeuring → Goedgekeurd → Ingepland → Gepubliceerd**.
 
-### 2.4 Agency ↔ Bedrijf goedkeuringsflow ✅
-- **Twee accounttypes**: Bedrijf (beheert zichzelf) en Agency (beheert meerdere bedrijven).
-- Agency nodigt een bedrijf uit (e-mail-link); de ondernemer krijgt een licht "goedkeur-account".
+### 2.4 Agency ↔ Bedrijf: toegangsmodel & goedkeuring ✅
+- **Het bedrijfsaccount is altijd de eigenaar** van het brandprofiel, de kanalen en de AI-credits. Een bedrijf kan alles volledig zelf doen, zonder agency.
+- **Agencies krijgen toegang tot het account van het bedrijf** (uitnodiging vanuit het bedrijf, of de agency stuurt een koppelverzoek dat het bedrijf accepteert).
+- **Credits van de klant**: werkt een agency in het account van klant X, dan gaan generates, chats en fotoverbeteringen van de tegoeden van klant X af. Het Agency-abonnement heeft alleen een klein eigen tegoed voor de eigen kanalen van de agency.
 - Agency zet posts klaar → ondernemer krijgt pushnotificatie → ziet een preview precies zoals de post er live uit gaat zien → **Goedkeuren / Afwijzen met opmerking**.
 - Optioneel: auto-publiceren na goedkeuring, of stille goedkeuring na X dagen (instelbaar).
-- Bedrijven zonder agency doen alles zelf, zonder verplichte goedkeuringsstap.
+- In de app is altijd zichtbaar in welk klantaccount je werkt (workspace-switcher), zodat er nooit verwarring is over wiens credits worden gebruikt.
 
 ### 2.5 Beste-tijden-analyse 📈
 - Per gekoppeld kanaal analyseren we engagement-data (via de platform-API's: Instagram Insights, Facebook Page Insights, LinkedIn Analytics, TikTok, …).
@@ -62,6 +63,11 @@ Dit profiel wordt bij **elke** caption-generatie meegestuurd (en gecachet — zi
 | Google Mijn Bedrijf | Google Business Profile API | "Updates/aanbiedingen" posts |
 
 Publicatie loopt via onze backend-scheduler (niet vanaf de telefoon), zodat posts ook live gaan als de app dicht is.
+
+### 2.7 Centi trainen: eigen AI-regels 🎓
+- Gebruikers geven Centi permanente instructies, bijv. *"Gebruik altijd emoticons, maar nooit 🙏"* of *"Sluit altijd af met #ribhousetexas"*.
+- Elke regel wordt opgeslagen bij het brandprofiel, meegestuurd bij elke generatie, en is **op elk moment weer te verwijderen** in het scherm "Centi trainen".
+- Naast de eigen regels gelden vaste CentipAI-regels (zichtbaar, niet verwijderbaar), waaronder: **nooit het teken "-" in captions**, en nooit feiten/prijzen/acties verzinnen.
 
 ---
 
@@ -97,11 +103,12 @@ Zelfs met het slimste Sonnet-model zitten we op **~€1,40 per 100 generates** �
 | | Starter | Business | Agency |
 |---|---|---|---|
 | Prijs | €14,99/mnd | €29,99/mnd | €79,99/mnd |
-| Bedrijven | 1 | 1 | 10 (+bijkopen) |
-| AI-credits/mnd | 100 | 300 | 1.500 |
+| Bedrijven | 1 | 1 | toegang tot 10 klantaccounts |
+| AI-credits/mnd | 100 | 300 | 250 eigen; klantwerk gaat van de credits van de klant |
+| Fotoverbeteringen/mnd | 10 | 30 | 25 eigen |
 | Chatberichten/mnd | 200 | 750 | onbeperkt* |
-| Kanalen | 3 | 6 | 6 per bedrijf |
-| Goedkeuringsflow | – | ✓ | ✓ |
+| Kanalen | 3 | 6 | 6 per klant |
+| Goedkeuringsflow | agency uitnodigen kan | ✓ | ✓ |
 
 *"onbeperkt" met fair-use limiet.
 
@@ -207,6 +214,9 @@ Via de Higgsfield-connectie genereren we een set **animatie-assets van de duizen
 - **Brand-onboarding**: websitelink + exact 4 vragen (type bedrijf, toon persoonlijk↔strikt zakelijk met voorbeeldcaptions, je/u, taal + emoji).
 - **Betalen hybride**: Stripe op web/desktop (geen store-commissie), verplichte IAP via RevenueCat in de mobiele apps.
 - **Desktop-versie**: zelfde Expo-codebase, geëxporteerd als webapp; alle schermen zijn responsive gebouwd.
+- **Toegangsmodel**: het bedrijf is eigenaar van account en credits; agencies werken ín het klantaccount en verbruiken de credits van die klant. Bedrijven kunnen ook alles zelf.
+- **Nooit "-" in teksten**: vaste generatieregel, ook doorgevoerd in alle app-teksten.
+- **Trainbare Centi**: eigen AI-regels toevoegen én verwijderen via het scherm "Centi trainen".
 
 ## 11. Openstaande keuzes (input gevraagd)
 

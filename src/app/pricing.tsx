@@ -60,16 +60,24 @@ function PeriodTab({ label, active, onPress }: { label: string; active: boolean;
 function PlanCard({ plan, period, wide }: { plan: Plan; period: BillingPeriod; wide: boolean }) {
   const price = period === 'monthly' ? plan.priceMonthly : plan.priceYearly;
 
-  const features = [
-    `${plan.credits} AI-credits per maand`,
-    plan.chatMessages === 'unlimited'
-      ? 'Onbeperkt chatten met Centi*'
-      : `${plan.chatMessages} chatberichten met Centi p/mnd`,
-    `${plan.photoEnhancements}× AI-fotoverbetering p/mnd`,
-    `${plan.channels} social kanalen${plan.companies > 1 ? ' per bedrijf' : ''}`,
-    plan.companies > 1 ? `Tot ${plan.companies} bedrijven` : '1 bedrijf',
-    ...(plan.approvalFlow ? ['Goedkeuringsflow met klanten'] : []),
-  ];
+  const isAgency = plan.id === 'agency';
+  const features = isAgency
+    ? [
+        `Toegang tot ${plan.companies} klantaccounts`,
+        'AI-credits gaan van het klantaccount waarin je werkt',
+        'Goedkeuringsflow: de klant keurt zelf goed',
+        'Onbeperkt chatten met Centi*',
+        `${plan.credits} eigen credits en ${plan.photoEnhancements}× fotoverbetering p/mnd voor je eigen kanalen`,
+        `${plan.channels} social kanalen per klant`,
+      ]
+    : [
+        `${plan.credits} AI-credits per maand`,
+        `${plan.chatMessages} chatberichten met Centi p/mnd`,
+        `${plan.photoEnhancements}× AI-fotoverbetering p/mnd`,
+        `${plan.channels} social kanalen`,
+        'Zelf plannen en publiceren, geen agency nodig',
+        ...(plan.approvalFlow ? ['Nodig een agency uit die in jouw account werkt'] : []),
+      ];
 
   const card = (
     <View style={[styles.card, wide && styles.cardWide, plan.highlight && styles.cardInHighlight]}>

@@ -38,14 +38,14 @@ export default function AccountTypeScreen() {
         <OptionCard
           emoji="🏪"
           title="Bedrijf"
-          subtitle="Ik beheer de social media van mijn eigen bedrijf."
+          subtitle="Ik doe de social media van mijn eigen bedrijf. Een agency uitnodigen die in mijn account meewerkt kan altijd later."
           selected={selected === 'company'}
           onPress={() => setSelected('company')}
         />
         <OptionCard
           emoji="🏢"
           title="Agency"
-          subtitle="Ik beheer social media voor meerdere klanten en laat hen posts goedkeuren."
+          subtitle="Ik krijg toegang tot de accounts van mijn klanten en zet content voor ze klaar. Zij keuren goed en hun credits worden gebruikt."
           selected={selected === 'agency'}
           onPress={() => setSelected('agency')}
         />

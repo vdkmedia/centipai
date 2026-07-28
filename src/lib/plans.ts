@@ -55,14 +55,17 @@ export const PLANS: Plan[] = [
     iapProductIds: { monthly: 'centipai.business.monthly', yearly: 'centipai.business.yearly' },
   },
   {
+    // Agency's kopen toegang, geen grote creditbundel: zodra een agency in het
+    // account van een klant werkt, gaan de AI-credits van dat klantaccount af.
+    // De eigen credits/verbeteringen zijn voor de eigen kanalen van de agency.
     id: 'agency',
     name: 'Agency',
-    tagline: 'Beheer tot 10 bedrijven, klanten keuren zelf goed.',
+    tagline: 'Werk in de accounts van je klanten. Zij keuren goed, hun credits tellen.',
     priceMonthly: 7999,
     priceYearly: 6699,
-    credits: 1500,
+    credits: 250,
     chatMessages: 'unlimited',
-    photoEnhancements: 150,
+    photoEnhancements: 25,
     channels: 6,
     companies: 10,
     approvalFlow: true,
