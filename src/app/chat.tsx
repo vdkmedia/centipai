@@ -26,6 +26,7 @@ import {
   type PostTypeId,
 } from '@/lib/chat';
 import { generateCaptions } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { useOnboarding } from '@/lib/onboarding';
 
 export default function ChatScreen() {
@@ -89,10 +90,23 @@ export default function ChatScreen() {
 
     // Via de backend (Claude Haiku) zodra die geconfigureerd is; anders demo.
     void (async () => {
+      // Ingelogd? Dan via de backend met het juiste bedrijfsaccount.
+      let accessToken: string | undefined;
+      let companyId: string | undefined;
+      if (supabase) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        accessToken = sessionData.session?.access_token;
+        if (accessToken) {
+          const { data: company } = await supabase.from('companies').select('id').limit(1).maybeSingle();
+          companyId = company?.id;
+        }
+      }
       const captions = await generateCaptions({
         brand: state.brand,
         request: lastRequest,
         postType: type,
+        accessToken,
+        companyId,
       });
       // Kleine pauze zodat de typ-indicator zichtbaar is
       await new Promise((r) => setTimeout(r, 900));

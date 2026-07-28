@@ -189,3 +189,22 @@ create policy "approvals via post" on public.approvals for all using (
 );
 create policy "ledger read" on public.credit_ledger for select using (public.has_company_access (company_id));
 -- Schrijven in credit_ledger gebeurt uitsluitend via edge functions (service role).
+
+-- ═══════════════ Welkomstcadeau ═══════════════
+-- Elk nieuw bedrijf start met 25 gratis proef-credits, zodat de chat
+-- direct uitgeprobeerd kan worden voordat er een abonnement is.
+
+create or replace function public.grant_trial_credits ()
+returns trigger
+language plpgsql security definer
+as $$
+begin
+  insert into public.credit_ledger (company_id, acted_by, kind, amount)
+  values (new.id, new.owner_id, 'monthly_grant', 25);
+  return new;
+end;
+$$;
+
+create trigger companies_trial_credits
+after insert on public.companies
+for each row execute function public.grant_trial_credits ();

@@ -16,9 +16,7 @@ export default function Welcome() {
           <GradientButton
             title="Ik heb al een account"
             variant="outline"
-            onPress={() => {
-              // TODO: inloggen (Supabase Auth) — volgt na de onboarding-fase
-            }}
+            onPress={() => router.push('/auth')}
           />
         </View>
       }>
