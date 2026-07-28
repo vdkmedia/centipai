@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -107,7 +108,11 @@ function PlanCard({ plan, period, wide }: { plan: Plan; period: BillingPeriod; w
       <GradientButton
         title={`Kies ${plan.name}`}
         variant={plan.highlight ? 'primary' : 'outline'}
-        onPress={() => startCheckout(plan, period)}
+        onPress={async () => {
+          await startCheckout(plan, period);
+          // Zolang de backend nog niet is aangesloten: door naar de chat-demo.
+          router.push('/chat');
+        }}
       />
     </View>
   );

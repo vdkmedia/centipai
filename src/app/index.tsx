@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Centi } from '@/components/ui/centi';
 import { GradientButton } from '@/components/ui/gradient-button';
@@ -45,6 +45,10 @@ export default function Welcome() {
         <Usp emoji="✅" text="Agency zet klaar, de ondernemer keurt goed" />
         <Usp emoji="🚀" text="Publiceer naar Instagram, Facebook, TikTok, LinkedIn en meer" />
       </View>
+
+      <Pressable onPress={() => router.push('/chat')} style={styles.demoLink}>
+        <Text style={styles.demoLinkText}>Eerst even proberen? Open de demo-chat met Centi</Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -96,4 +100,6 @@ const styles = StyleSheet.create({
   uspEmoji: { fontSize: 22 },
   uspText: { flex: 1, fontSize: 15, color: Colors.text, lineHeight: 20 },
   footer: { gap: Spacing.sm },
+  demoLink: { alignItems: 'center', paddingVertical: Spacing.sm },
+  demoLinkText: { fontSize: 14, fontWeight: '700', color: '#EE2A7B' },
 });
