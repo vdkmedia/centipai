@@ -200,7 +200,15 @@ Via de Higgsfield-connectie genereren we een set **animatie-assets van de duizen
 
 ---
 
-## 10. Openstaande keuzes (input gevraagd)
+## 10. Besluiten (28 juli)
+
+- **Haiku-first**: Haiku 4.5 is het standaardmodel (chat, simpele captions); alleen opschalen naar Sonnet als de taak erom vraagt (complexe captions, website-analyse).
+- **Foto's upload je zelf** — wij genereren geen beelden. Wel **AI-fotoverbetering** (belichting/scherpte/uitsnede), en die is **strikt gelimiteerd** per abonnement (10/30/150 p/mnd) omdat beeldbewerking veel duurder is dan tekst.
+- **Brand-onboarding**: websitelink + exact 4 vragen (type bedrijf, toon persoonlijk↔strikt zakelijk met voorbeeldcaptions, je/u, taal + emoji).
+- **Betalen hybride**: Stripe op web/desktop (geen store-commissie), verplichte IAP via RevenueCat in de mobiele apps.
+- **Desktop-versie**: zelfde Expo-codebase, geëxporteerd als webapp; alle schermen zijn responsive gebouwd.
+
+## 11. Openstaande keuzes (input gevraagd)
 
 1. **Prijspunten** — kloppen de indicatieve tiers met je gevoel voor de markt?
 2. **MVP-kanalen** — akkoord om met Instagram + Facebook te starten en TikTok/Threads naar fase 3 te schuiven (vanwege audit-doorlooptijd)?
