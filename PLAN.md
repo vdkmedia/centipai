@@ -37,6 +37,7 @@ Dit profiel wordt bij **elke** caption-generatie meegestuurd (en gecachet — zi
 - Maand/week-kalenderweergave in Instagram-achtige stijl.
 - Drag & drop posts naar andere dagen/tijden.
 - Per post eenvoudig **aanvinken op welke kanalen** hij gepubliceerd wordt (FB / IG / Threads / TikTok / LinkedIn / GMB), met per kanaal aangepaste versies (bijv. hashtags wel op IG, niet op LinkedIn).
+- **Per post kies je het formaat: post, story of reel.** De app toont automatisch welke kanalen dat formaat ondersteunen (stories: IG en FB; reels: IG, FB en TikTok; posts: overal).
 - Statussen: **Concept → Wacht op goedkeuring → Goedgekeurd → Ingepland → Gepubliceerd**.
 
 ### 2.4 Agency ↔ Bedrijf: toegangsmodel & goedkeuring ✅

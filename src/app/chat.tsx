@@ -17,11 +17,14 @@ import { Centi } from '@/components/ui/centi';
 import { Brand, Colors, Radius, Spacing } from '@/constants/theme';
 import {
   CHANNELS,
+  CHANNELS_PER_TYPE,
+  POST_TYPES,
   SCHEDULE_SLOTS,
   generateDemoCaptions,
   nextId,
   type ChatMessage,
   type ChatPhoto,
+  type PostTypeId,
 } from '@/lib/chat';
 import { useOnboarding } from '@/lib/onboarding';
 
@@ -46,6 +49,7 @@ export default function ChatScreen() {
   const [thinking, setThinking] = useState(false);
   const [chosenCaption, setChosenCaption] = useState<string | null>(null);
   const [channels, setChannels] = useState<string[]>(['instagram', 'facebook']);
+  const [postType, setPostType] = useState<PostTypeId>('post');
   const [celebrate, setCelebrate] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -104,6 +108,7 @@ export default function ChatScreen() {
 
   const schedule = (when: string) => {
     if (!chosenCaption) return;
+    const supported = CHANNELS_PER_TYPE[postType];
     setMessages((m) => [
       ...m,
       {
@@ -112,7 +117,10 @@ export default function ChatScreen() {
         kind: 'planned',
         caption: chosenCaption,
         when,
-        channels: CHANNELS.filter((c) => channels.includes(c.id)).map((c) => c.label),
+        channels: CHANNELS.filter((c) => channels.includes(c.id) && supported.includes(c.id)).map(
+          (c) => c.label,
+        ),
+        postType,
       },
     ]);
     setCelebrate(true);
@@ -151,6 +159,8 @@ export default function ChatScreen() {
             toggleChannel={(id) =>
               setChannels((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]))
             }
+            postType={postType}
+            setPostType={setPostType}
           />
         ))}
         {thinking ? (
@@ -209,12 +219,16 @@ function MessageBubble({
   onSchedule,
   channels,
   toggleChannel,
+  postType,
+  setPostType,
 }: {
   msg: ChatMessage;
   onChooseCaption: (c: string) => void;
   onSchedule: (when: string) => void;
   channels: string[];
   toggleChannel: (id: string) => void;
+  postType: PostTypeId;
+  setPostType: (t: PostTypeId) => void;
 }) {
   if (msg.from === 'user') {
     return (
@@ -260,20 +274,43 @@ function MessageBubble({
     return (
       <View style={styles.centiRow}>
         <View style={{ flex: 1, gap: Spacing.sm }}>
-          <Centi size={40} message="Topkeuze! Waar en wanneer wil je hem plaatsen?" />
+          <Centi size={40} message="Topkeuze! Wordt het een post, story of reel? En waar en wanneer plaatsen we hem?" />
+          <View style={styles.chipsRow}>
+            {POST_TYPES.map((t) => {
+              const active = postType === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => setPostType(t.id)}
+                  style={[styles.typeChip, active && styles.typeChipActive]}>
+                  <Text style={styles.typeChipEmoji}>{t.emoji}</Text>
+                  <Text style={[styles.chipText, active && styles.typeChipTextActive]}>{t.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
           <View style={styles.chipsRow}>
             {CHANNELS.map((ch) => {
-              const active = channels.includes(ch.id);
+              const supported = CHANNELS_PER_TYPE[postType].includes(ch.id);
+              const active = supported && channels.includes(ch.id);
               return (
                 <Pressable
                   key={ch.id}
+                  disabled={!supported}
                   onPress={() => toggleChannel(ch.id)}
-                  style={[styles.chip, active && styles.chipActive]}>
+                  style={[styles.chip, active && styles.chipActive, !supported && styles.chipDisabled]}>
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>{ch.label}</Text>
                 </Pressable>
               );
             })}
           </View>
+          {postType !== 'post' ? (
+            <Text style={styles.formatHint}>
+              {postType === 'story'
+                ? 'Stories kunnen op Instagram en Facebook.'
+                : 'Reels kunnen op Instagram, Facebook en TikTok.'}
+            </Text>
+          ) : null}
           <View style={styles.chipsRow}>
             {SCHEDULE_SLOTS.map((slot) => (
               <Pressable key={slot.id} onPress={() => onSchedule(slot.label)} style={styles.slotChip}>
@@ -290,13 +327,22 @@ function MessageBubble({
   return (
     <View style={styles.centiRow}>
       <View style={{ flex: 1, gap: Spacing.sm }}>
-        <Centi size={40} mood="happy" message={`Ingepland! ${msg.when} op ${msg.channels.join(' en ')}. 🎉`} />
+        <Centi
+          size={40}
+          mood="happy"
+          message={`Ingepland als ${msg.postType === 'post' ? 'post' : msg.postType}! ${msg.when} op ${msg.channels.join(' en ')}. 🎉`}
+        />
         <View style={styles.plannedCard}>
-          <Text style={styles.plannedLabel}>INGEPLANDE POST</Text>
+          <Text style={styles.plannedLabel}>
+            {msg.postType === 'story' ? 'INGEPLANDE STORY' : msg.postType === 'reel' ? 'INGEPLANDE REEL' : 'INGEPLANDE POST'}
+          </Text>
           <Text style={styles.plannedCaption}>{msg.caption}</Text>
           <Text style={styles.plannedMeta}>
             {msg.when} · {msg.channels.join(', ')} · wacht op goedkeuring
           </Text>
+          {msg.postType === 'reel' ? (
+            <Text style={styles.plannedMeta}>Tip: voeg een korte video toe voor het beste resultaat.</Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -351,6 +397,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   chipActive: { borderColor: Brand.pink, backgroundColor: '#FEF5F9' },
+  chipDisabled: { opacity: 0.35 },
+  typeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  typeChipActive: { borderColor: Brand.purple, backgroundColor: '#F6EEFD' },
+  typeChipEmoji: { fontSize: 14 },
+  typeChipTextActive: { color: Brand.purple },
+  formatHint: { marginLeft: 56, fontSize: 12.5, color: Colors.textSecondary },
   chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
   chipTextActive: { color: Brand.pink },
   slotChip: {

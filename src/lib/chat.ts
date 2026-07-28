@@ -10,7 +10,15 @@ export type ChatMessage =
   | { id: string; from: 'centi'; kind: 'text'; text: string }
   | { id: string; from: 'centi'; kind: 'captions'; captions: string[] }
   | { id: string; from: 'centi'; kind: 'schedule'; caption: string }
-  | { id: string; from: 'centi'; kind: 'planned'; caption: string; when: string; channels: string[] };
+  | {
+      id: string;
+      from: 'centi';
+      kind: 'planned';
+      caption: string;
+      when: string;
+      channels: string[];
+      postType: PostTypeId;
+    };
 
 let idCounter = 0;
 export function nextId(): string {
@@ -71,6 +79,30 @@ export const SCHEDULE_SLOTS = [
   { id: 'sat', label: 'Zaterdag 11:00' },
   { id: 'sun', label: 'Zondag 19:30' },
 ] as const;
+
+export type PostTypeId = 'post' | 'story' | 'reel';
+
+export const POST_TYPES: { id: PostTypeId; label: string; emoji: string }[] = [
+  { id: 'post', label: 'Post', emoji: '🖼️' },
+  { id: 'story', label: 'Story', emoji: '⏱️' },
+  { id: 'reel', label: 'Reel', emoji: '🎬' },
+];
+
+export const POST_TYPE_LABELS: Record<PostTypeId, string> = {
+  post: 'Post',
+  story: 'Story',
+  reel: 'Reel',
+};
+
+/**
+ * Welk formaat kan waar? Stories bestaan op Instagram en Facebook; reels
+ * (korte video) op Instagram, Facebook en TikTok; een gewone post kan overal.
+ */
+export const CHANNELS_PER_TYPE: Record<PostTypeId, string[]> = {
+  post: ['instagram', 'facebook', 'tiktok', 'linkedin'],
+  story: ['instagram', 'facebook'],
+  reel: ['instagram', 'facebook', 'tiktok'],
+};
 
 export const CHANNELS = [
   { id: 'instagram', label: 'Instagram' },
