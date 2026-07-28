@@ -22,52 +22,73 @@ export default function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [notice, setNotice] = useState<string | null>(null);
+
+  /**
+   * Maakt bij de eerste ingelogde sessie het bedrijf, brandprofiel en de
+   * AI-regels uit de onboarding aan. Draait na login én na signup met
+   * directe sessie, en doet niets als het bedrijf al bestaat.
+   */
+  const ensureProvisioned = async (userId: string) => {
+    if (!supabase) return;
+    const { data: existing } = await supabase.from('companies').select('id').limit(1).maybeSingle();
+    if (existing) return;
+
+    await supabase.from('profiles').upsert({ id: userId });
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .insert({ name: state.brand.companyName || 'Mijn bedrijf', owner_id: userId })
+      .select('id')
+      .single();
+    if (companyError || !company) throw companyError ?? new Error('Bedrijf aanmaken mislukt');
+
+    await supabase.from('brand_profiles').upsert({
+      company_id: company.id,
+      website: state.brand.website || null,
+      industry: state.brand.industry,
+      tone: state.brand.tone,
+      form_of_address: state.brand.formOfAddress,
+      language: state.brand.language ?? 'nl',
+      use_emoji: state.brand.useEmoji,
+    });
+    if (state.brand.customRules.length > 0) {
+      await supabase.from('ai_rules').insert(
+        state.brand.customRules.map((rule) => ({
+          company_id: company.id,
+          rule,
+          created_by: userId,
+        })),
+      );
+    }
+    if (state.accountType === 'agency') {
+      await supabase
+        .from('agencies')
+        .insert({ name: state.brand.companyName || 'Mijn agency', owner_id: userId });
+    }
+  };
+
   const submit = async () => {
     if (!supabase) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       if (mode === 'signup') {
         const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) throw signUpError;
-        const userId = data.user?.id;
-        if (userId) {
-          // Profiel + bedrijf + brandprofiel + AI-regels uit de onboarding
-          await supabase.from('profiles').upsert({ id: userId });
-          const { data: company } = await supabase
-            .from('companies')
-            .insert({ name: state.brand.companyName || 'Mijn bedrijf', owner_id: userId })
-            .select('id')
-            .single();
-          if (company) {
-            await supabase.from('brand_profiles').upsert({
-              company_id: company.id,
-              website: state.brand.website || null,
-              industry: state.brand.industry,
-              tone: state.brand.tone,
-              form_of_address: state.brand.formOfAddress,
-              language: state.brand.language ?? 'nl',
-              use_emoji: state.brand.useEmoji,
-            });
-            if (state.brand.customRules.length > 0) {
-              await supabase.from('ai_rules').insert(
-                state.brand.customRules.map((rule) => ({
-                  company_id: company.id,
-                  rule,
-                  created_by: userId,
-                })),
-              );
-            }
-            if (state.accountType === 'agency') {
-              await supabase
-                .from('agencies')
-                .insert({ name: state.brand.companyName || 'Mijn agency', owner_id: userId });
-            }
-          }
+        if (!data.session) {
+          // E-mailbevestiging staat aan: eerst de mail, daarna inloggen
+          setNotice(
+            'Bijna klaar! Check je inbox en klik op de bevestigingslink. Log daarna hier in, dan zet ik je account verder klaar.',
+          );
+          setMode('login');
+          return;
         }
+        await ensureProvisioned(data.session.user.id);
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
+        if (data.session) await ensureProvisioned(data.session.user.id);
       }
       router.replace('/chat');
     } catch (e) {
@@ -75,6 +96,8 @@ export default function AuthScreen() {
       setError(
         message.includes('Invalid login credentials')
           ? 'Onjuiste combinatie van e-mail en wachtwoord.'
+          : message.includes('Email not confirmed')
+            ? 'Bevestig eerst je e-mailadres via de link in je inbox, en log dan opnieuw in.'
           : message.includes('already registered')
             ? 'Dit e-mailadres heeft al een account. Log in.'
             : message,
@@ -140,6 +163,7 @@ export default function AuthScreen() {
         autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
       />
 
+      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable onPress={() => setMode(mode === 'signup' ? 'login' : 'signup')} style={styles.switchBtn}>
@@ -172,6 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
   },
   error: { marginTop: Spacing.md, color: Colors.danger, fontSize: 14, lineHeight: 19 },
+  notice: { marginTop: Spacing.md, color: Colors.success, fontSize: 14, lineHeight: 19, fontWeight: '600' },
   switchBtn: { marginTop: Spacing.lg, alignItems: 'center' },
   switchText: { fontSize: 14, fontWeight: '700', color: '#EE2A7B' },
 });
