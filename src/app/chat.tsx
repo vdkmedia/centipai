@@ -239,14 +239,14 @@ export default function ChatScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={() => router.push('/pricing')}
+            onPress={() => router.push('/credits')}
             style={styles.creditsBadge}
             accessibilityLabel="AI-credits, tik om bij te kopen">
             <Text style={styles.creditsBadgeText}>⚡ {credits ?? '…'}</Text>
             <Text style={styles.creditsBadgeSub}>credits · bijkopen</Text>
           </Pressable>
-          <Pressable onPress={() => router.push('/planning')} style={styles.headerBtn} accessibilityLabel="Planning bekijken">
-            <Text style={{ fontSize: 20 }}>🗓️</Text>
+          <Pressable onPress={() => router.push('/menu')} style={styles.headerBtn} accessibilityLabel="Menu openen">
+            <Text style={{ fontSize: 19 }}>☰</Text>
           </Pressable>
         </View>
       </View>
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
   headerInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, width: '100%', alignSelf: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.text },
   headerSubtitle: { fontSize: 12.5, color: Colors.textSecondary },
-  wideColumn: { maxWidth: 640, alignSelf: 'center', width: '100%' },
+  wideColumn: { maxWidth: 640, alignSelf: 'center', width: '100%', marginHorizontal: 'auto' },
   list: { flex: 1 },
   listContent: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xl },
   centiRow: { flexDirection: 'row', width: '100%' },

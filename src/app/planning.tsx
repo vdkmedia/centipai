@@ -20,9 +20,20 @@ const CHANNEL_LABELS: Record<string, string> = {
   google_business: 'Google Mijn Bedrijf',
 };
 
+const FILTERS = [
+  { id: 'all', label: 'Alle' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'facebook', label: 'Facebook' },
+  { id: 'threads', label: 'Threads' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'google_business', label: 'Google Mijn Bedrijf' },
+] as const;
+
 export default function PlanningScreen() {
   const [posts, setPosts] = useState<PlannedPost[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
+  const [filter, setFilter] = useState<string>('all');
 
   useFocusEffect(
     useCallback(() => {
@@ -31,22 +42,46 @@ export default function PlanningScreen() {
     }, []),
   );
 
-  const upcoming = posts.filter((p) => new Date(p.scheduledAt).getTime() >= Date.now() - 3600_000);
+  const upcoming = posts.filter(
+    (p) =>
+      new Date(p.scheduledAt).getTime() >= Date.now() - 3600_000 &&
+      (filter === 'all' || p.channels.includes(filter)),
+  );
 
   return (
     <Screen
       footer={<GradientButton title="Nieuwe post maken met Centi" onPress={() => router.push('/chat')} />}>
       <View style={styles.topRow}>
         <Text style={styles.heading}>Planning</Text>
-        <Pressable onPress={() => router.push('/pricing')} style={styles.creditsBadge}>
+        <Pressable onPress={() => router.push('/credits')} style={styles.creditsBadge}>
           <Text style={styles.creditsBadgeText}>⚡ {credits ?? '…'} credits</Text>
           <Text style={styles.creditsBadgeSub}>tik om bij te kopen</Text>
         </Pressable>
       </View>
 
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => {
+          const active = filter === f.id;
+          return (
+            <Pressable
+              key={f.id}
+              onPress={() => setFilter(f.id)}
+              style={[styles.filterChip, active && styles.filterChipActive]}>
+              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{f.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {upcoming.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <Centi message="Nog niks ingepland! Stuur me een foto in de chat en we zetten je eerste post in de planning." />
+          <Centi
+            message={
+              filter === 'all'
+                ? 'Nog niks ingepland! Stuur me een foto in de chat en we zetten je eerste post in de planning.'
+                : 'Niks ingepland voor dit kanaal. Kies een ander filter of plan iets nieuws in via de chat.'
+            }
+          />
         </View>
       ) : (
         <View style={styles.list}>
@@ -118,6 +153,17 @@ const styles = StyleSheet.create({
   creditsBadgeText: { fontSize: 14, fontWeight: '800', color: Brand.pink },
   creditsBadgeSub: { fontSize: 10, color: Colors.textSecondary, fontWeight: '600' },
   emptyWrap: { marginTop: Spacing.lg },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md },
+  filterChip: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  filterChipActive: { borderColor: Brand.pink, backgroundColor: '#FEF5F9' },
+  filterChipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  filterChipTextActive: { color: Brand.pink },
   list: { gap: Spacing.md },
   card: {
     borderWidth: 1.5,

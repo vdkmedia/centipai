@@ -136,9 +136,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    width: '100%',
+    // Zorgt dat lange tekstballonnen binnen het scherm blijven en afbreken
+    minWidth: 0,
   },
   bubble: {
     flex: 1,
+    minWidth: 0,
     backgroundColor: Colors.backgroundSoft,
     borderRadius: Radius.lg,
     borderBottomLeftRadius: 4,
