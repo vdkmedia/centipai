@@ -112,9 +112,14 @@ Deno.serve(async (req) => {
           schema: {
             type: 'object',
             properties: {
+              observation: {
+                type: 'string',
+                description:
+                  'Wat je concreet op de foto(s) ziet, in 1 tot 2 zinnen, in de taal van het brandprofiel. Leeg laten als er geen foto is.',
+              },
               captions: { type: 'array', items: { type: 'string' } },
             },
-            required: ['captions'],
+            required: ['observation', 'captions'],
             additionalProperties: false,
           },
         },
@@ -125,7 +130,9 @@ Deno.serve(async (req) => {
       return json({ error: 'Centi kan hier geen caption voor maken' }, 422);
     }
     const text = response.content.find((b) => b.type === 'text');
-    const captions: string[] = text ? JSON.parse(text.text).captions : [];
+    const parsed = text ? JSON.parse(text.text) : { captions: [], observation: '' };
+    const captions: string[] = parsed.captions ?? [];
+    const observation: string = (parsed.observation ?? '').trim();
 
     // 6. Credit afboeken op het bedrijf, met de handelende gebruiker erbij
     await supabase.from('credit_ledger').insert({
@@ -135,7 +142,7 @@ Deno.serve(async (req) => {
       amount: -1,
     });
 
-    return json({ captions: captions.slice(0, variantCount) });
+    return json({ captions: captions.slice(0, variantCount), observation: observation || null });
   } catch (err) {
     console.error(err);
     return json({ error: 'Er ging iets mis bij het genereren' }, 500);
@@ -171,6 +178,7 @@ function buildSystemPrompt(
   const lines = [
     `Je bent Centi, de social media copywriter van ${companyName}.`,
     'Je schrijft captions voor social media posts op basis van de foto en het verzoek van de gebruiker.',
+    'Analyseer bijgevoegde foto\u2019s ALTIJD zorgvuldig: benoem in het veld "observation" concreet wat je ziet (gerecht, product, sfeer, mensen, kleuren). Baseer elke caption op wat er echt op de foto staat, nooit op aannames.',
     '',
     'Brandprofiel:',
     `- Branche: ${brand?.industry ?? 'onbekend'}`,

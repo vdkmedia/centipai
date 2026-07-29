@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useRef, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -20,11 +21,17 @@ import {
   CHANNELS_PER_TYPE,
   POST_TYPES,
   SCHEDULE_SLOTS,
+  formatPlanDate,
+  metaSyncNote,
   nextId,
+  parseDutchDateTime,
+  slotToDate,
   type ChatMessage,
   type ChatPhoto,
   type PostTypeId,
 } from '@/lib/chat';
+import { getCreditBalance, spendDemoCredit } from '@/lib/credits';
+import { addPlannedPost } from '@/lib/planner';
 import { generateCaptions } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { useOnboarding } from '@/lib/onboarding';
@@ -52,8 +59,16 @@ export default function ChatScreen() {
   const [channels, setChannels] = useState<string[]>(['instagram', 'facebook']);
   const [postType, setPostType] = useState<PostTypeId>('post');
   const [lastRequest, setLastRequest] = useState('');
+  const [lastPhotos, setLastPhotos] = useState<ChatPhoto[]>([]);
+  const [customDate, setCustomDate] = useState('');
+  const [customDateError, setCustomDateError] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    void getCreditBalance().then(setCredits);
+  }, []);
 
   const scrollDown = () => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
@@ -62,10 +77,16 @@ export default function ChatScreen() {
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
       selectionLimit: 4,
-      quality: 0.8,
+      quality: 0.7,
+      base64: true,
     });
     if (!result.canceled) {
-      setPhotos((p) => [...p, ...result.assets.map((a) => ({ uri: a.uri }))].slice(0, 4));
+      const picked = result.assets.map((a) => ({
+        uri: a.uri,
+        base64: a.base64 ?? undefined,
+        mediaType: a.mimeType ?? 'image/jpeg',
+      }));
+      setPhotos((p) => [...p, ...picked].slice(0, 4));
     }
   };
 
@@ -75,6 +96,7 @@ export default function ChatScreen() {
 
     const userMsg: ChatMessage = { id: nextId(), from: 'user', text: text || undefined, photos };
     setLastRequest(text);
+    setLastPhotos(photos);
     setMessages((m) => [...m, userMsg, { id: nextId(), from: 'centi', kind: 'format' }]);
     setDraft('');
     setPhotos([]);
@@ -101,17 +123,37 @@ export default function ChatScreen() {
           companyId = company?.id;
         }
       }
-      const captions = await generateCaptions({
+      const result = await generateCaptions({
         brand: state.brand,
         request: lastRequest,
         postType: type,
         accessToken,
         companyId,
+        images: lastPhotos
+          .filter((p) => p.base64)
+          .map((p) => ({ mediaType: p.mediaType ?? 'image/jpeg', data: p.base64! })),
       });
       // Kleine pauze zodat de typ-indicator zichtbaar is
       await new Promise((r) => setTimeout(r, 900));
+      const extra: ChatMessage[] = [];
+      if (result.observation) {
+        extra.push({
+          id: nextId(),
+          from: 'centi',
+          kind: 'text',
+          text: `Ik zie op je foto: ${result.observation}`,
+        });
+      } else if (result.demo && lastPhotos.length > 0) {
+        extra.push({
+          id: nextId(),
+          from: 'centi',
+          kind: 'text',
+          text: 'Let op: de AI-koppeling staat nog niet aan, dus ik kan je foto nog niet écht bekijken. Dit zijn oefen-captions. Zodra de koppeling actief is vertel ik eerst wat ik op je foto zie en schrijf ik daar de captions bij.',
+        });
+      }
       setMessages((m) => [
         ...m,
+        ...extra,
         {
           id: nextId(),
           from: 'centi',
@@ -123,8 +165,10 @@ export default function ChatScreen() {
                 ? 'Met een hook die kijkers vasthoudt. Tik je favoriet aan. 👇'
                 : 'Kijk eens! Drie voorstellen in jouw stijl. Tik je favoriet aan. 👇',
         },
-        { id: nextId(), from: 'centi', kind: 'captions', captions },
+        { id: nextId(), from: 'centi', kind: 'captions', captions: result.captions },
       ]);
+      if (result.demo) await spendDemoCredit();
+      void getCreditBalance().then(setCredits);
       setThinking(false);
       scrollDown();
     })();
@@ -140,9 +184,11 @@ export default function ChatScreen() {
     scrollDown();
   };
 
-  const schedule = (when: string) => {
+  const schedule = (date: Date) => {
     if (!chosenCaption) return;
     const supported = CHANNELS_PER_TYPE[postType];
+    const chosenChannels = CHANNELS.filter((c) => channels.includes(c.id) && supported.includes(c.id));
+    const syncNote = metaSyncNote(date, chosenChannels.map((c) => c.id));
     setMessages((m) => [
       ...m,
       {
@@ -150,16 +196,34 @@ export default function ChatScreen() {
         from: 'centi',
         kind: 'planned',
         caption: chosenCaption,
-        when,
-        channels: CHANNELS.filter((c) => channels.includes(c.id) && supported.includes(c.id)).map(
-          (c) => c.label,
-        ),
+        when: formatPlanDate(date),
+        channels: chosenChannels.map((c) => c.label),
         postType,
+        syncNote,
       },
     ]);
+    void addPlannedPost({
+      caption: chosenCaption,
+      postType,
+      channels: chosenChannels.map((c) => c.id),
+      scheduledAt: date.toISOString(),
+      status: 'pending_approval',
+    });
+    setCustomDate('');
+    setCustomDateError(null);
     setCelebrate(true);
     setTimeout(() => setCelebrate(false), 1500);
     scrollDown();
+  };
+
+  const submitCustomDate = () => {
+    const parsed = parseDutchDateTime(customDate);
+    if (parsed instanceof Date) {
+      setCustomDateError(null);
+      schedule(parsed);
+    } else {
+      setCustomDateError(parsed.error);
+    }
   };
 
   return (
@@ -174,6 +238,16 @@ export default function ChatScreen() {
               {thinking ? 'is aan het schrijven…' : 'online · schrijft in jouw stijl'}
             </Text>
           </View>
+          <Pressable
+            onPress={() => router.push('/pricing')}
+            style={styles.creditsBadge}
+            accessibilityLabel="AI-credits, tik om bij te kopen">
+            <Text style={styles.creditsBadgeText}>⚡ {credits ?? '…'}</Text>
+            <Text style={styles.creditsBadgeSub}>credits · bijkopen</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/planning')} style={styles.headerBtn} accessibilityLabel="Planning bekijken">
+            <Text style={{ fontSize: 20 }}>🗓️</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -195,6 +269,10 @@ export default function ChatScreen() {
             }
             postType={postType}
             onChooseFormat={chooseFormat}
+            customDate={customDate}
+            setCustomDate={setCustomDate}
+            customDateError={customDateError}
+            submitCustomDate={submitCustomDate}
           />
         ))}
         {thinking ? (
@@ -255,14 +333,22 @@ function MessageBubble({
   toggleChannel,
   postType,
   onChooseFormat,
+  customDate,
+  setCustomDate,
+  customDateError,
+  submitCustomDate,
 }: {
   msg: ChatMessage;
   onChooseCaption: (c: string) => void;
-  onSchedule: (when: string) => void;
+  onSchedule: (date: Date) => void;
   channels: string[];
   toggleChannel: (id: string) => void;
   postType: PostTypeId;
   onChooseFormat: (t: PostTypeId) => void;
+  customDate: string;
+  setCustomDate: (v: string) => void;
+  customDateError: string | null;
+  submitCustomDate: () => void;
 }) {
   if (msg.from === 'user') {
     return (
@@ -357,11 +443,25 @@ function MessageBubble({
           ) : null}
           <View style={styles.chipsRow}>
             {SCHEDULE_SLOTS.map((slot) => (
-              <Pressable key={slot.id} onPress={() => onSchedule(slot.label)} style={styles.slotChip}>
+              <Pressable key={slot.id} onPress={() => onSchedule(slotToDate(slot.id))} style={styles.slotChip}>
                 <Text style={styles.slotChipText}>{slot.label}</Text>
               </Pressable>
             ))}
           </View>
+          <View style={styles.customDateRow}>
+            <TextInput
+              style={styles.customDateInput}
+              value={customDate}
+              onChangeText={setCustomDate}
+              placeholder="Zelf kiezen: 05-08-2026 17:00 (tot 1 jaar vooruit)"
+              placeholderTextColor={Colors.textSecondary}
+              onSubmitEditing={submitCustomDate}
+            />
+            <Pressable onPress={submitCustomDate} style={styles.customDateBtn}>
+              <Text style={styles.customDateBtnText}>Plan</Text>
+            </Pressable>
+          </View>
+          {customDateError ? <Text style={styles.customDateError}>{customDateError}</Text> : null}
         </View>
       </View>
     );
@@ -384,6 +484,7 @@ function MessageBubble({
           <Text style={styles.plannedMeta}>
             {msg.when} · {msg.channels.join(', ')} · wacht op goedkeuring
           </Text>
+          {msg.syncNote ? <Text style={styles.plannedMeta}>{msg.syncNote}</Text> : null}
           {msg.postType === 'reel' ? (
             <Text style={styles.plannedMeta}>Tip: voeg een korte video toe voor het beste resultaat.</Text>
           ) : null}
@@ -456,6 +557,43 @@ const styles = StyleSheet.create({
   typeChipEmoji: { fontSize: 14 },
   typeChipTextActive: { color: Brand.purple },
   formatHint: { marginLeft: 56, fontSize: 12.5, color: Colors.textSecondary },
+  creditsBadge: {
+    alignItems: 'center',
+    backgroundColor: '#FEF5F9',
+    borderRadius: Radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  creditsBadgeText: { fontSize: 14, fontWeight: '800', color: Brand.pink },
+  creditsBadgeSub: { fontSize: 9.5, color: Colors.textSecondary, fontWeight: '600' },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.backgroundSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customDateRow: { flexDirection: 'row', gap: 8, marginLeft: 56, alignItems: 'center' },
+  customDateInput: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    fontSize: 13.5,
+    color: Colors.text,
+    backgroundColor: Colors.card,
+  },
+  customDateBtn: {
+    backgroundColor: Brand.purple,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  customDateBtnText: { color: '#fff', fontWeight: '700', fontSize: 13.5 },
+  customDateError: { marginLeft: 56, fontSize: 12.5, color: Colors.danger },
   chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
   chipTextActive: { color: Brand.pink },
   slotChip: {

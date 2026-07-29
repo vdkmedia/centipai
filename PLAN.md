@@ -52,6 +52,7 @@ Dit profiel wordt bij **elke** caption-generatie meegestuurd (en gecachet — zi
 - Per gekoppeld kanaal analyseren we engagement-data (via de platform-API's: Instagram Insights, Facebook Page Insights, LinkedIn Analytics, TikTok, …).
 - Heatmap per weekdag/uur: "Jouw volgers zijn het actiefst op vrijdag 17:00–19:00."
 - Bij het inplannen twee opties: **"Kies zelf"** (datum/tijd-picker) of **"Slim inplannen"** (Centi kiest het beste moment op de gekozen dag of in de gekozen week).
+- **Tot een jaar vooruit plannen.** Meta (IG/FB/Threads) accepteert zelf maar 30 dagen vooruit; Centi bewaart verder weg geplande posts in de eigen scheduler en synct ze automatisch met Meta zodra ze binnen het 30-dagenvenster vallen. De app toont per post of hij al synct of wanneer de sync gebeurt.
 
 ### 2.6 Publiceren naar 6 platformen 🚀
 | Platform | API | Bijzonderheden |

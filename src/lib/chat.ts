@@ -3,6 +3,9 @@ import type { BrandProfile } from '@/lib/onboarding';
 
 export interface ChatPhoto {
   uri: string;
+  /** Base64-inhoud + mimetype, zodat Centi de foto echt kan analyseren. */
+  base64?: string;
+  mediaType?: string;
 }
 
 export type ChatMessage =
@@ -19,6 +22,7 @@ export type ChatMessage =
       when: string;
       channels: string[];
       postType: PostTypeId;
+      syncNote?: string | null;
     };
 
 let idCounter = 0;
@@ -120,7 +124,7 @@ export const POST_TYPE_LABELS: Record<PostTypeId, string> = {
  * (korte video) op Instagram, Facebook en TikTok; een gewone post kan overal.
  */
 export const CHANNELS_PER_TYPE: Record<PostTypeId, string[]> = {
-  post: ['instagram', 'facebook', 'tiktok', 'linkedin'],
+  post: ['instagram', 'facebook', 'threads', 'tiktok', 'linkedin', 'google_business'],
   story: ['instagram', 'facebook'],
   reel: ['instagram', 'facebook', 'tiktok'],
 };
@@ -128,6 +132,62 @@ export const CHANNELS_PER_TYPE: Record<PostTypeId, string[]> = {
 export const CHANNELS = [
   { id: 'instagram', label: 'Instagram' },
   { id: 'facebook', label: 'Facebook' },
+  { id: 'threads', label: 'Threads' },
   { id: 'tiktok', label: 'TikTok' },
   { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'google_business', label: 'Google Mijn Bedrijf' },
 ] as const;
+
+/**
+ * Datumhulpen voor het plannen. Centi plant tot een jaar vooruit; binnen
+ * het 30-dagenvenster van Meta wordt direct met Meta gesynct, daarbuiten
+ * bewaart onze eigen scheduler de post en synct hij automatisch zodra de
+ * datum binnen 30 dagen valt.
+ */
+export const MAX_DAYS_AHEAD = 365;
+export const META_SYNC_WINDOW_DAYS = 30;
+
+const WEEKDAYS = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+
+function nextWeekday(weekday: number, hour: number, minute: number): Date {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  let add = (weekday - d.getDay() + 7) % 7;
+  if (add === 0 && d.getTime() <= Date.now()) add = 7;
+  d.setDate(d.getDate() + add);
+  return d;
+}
+
+export function slotToDate(slotId: string): Date {
+  if (slotId === 'best') return nextWeekday(5, 17, 0);
+  if (slotId === 'sat') return nextWeekday(6, 11, 0);
+  return nextWeekday(0, 19, 30);
+}
+
+/** Parseert "dd-mm-jjjj uu:mm" naar een datum; null bij ongeldig/te ver. */
+export function parseDutchDateTime(input: string): Date | { error: string } {
+  const m = input.trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})[ ,]+(\d{1,2}):(\d{2})$/);
+  if (!m) return { error: 'Gebruik het formaat dag-maand-jaar uur:minuut, bijv. 05-08-2026 17:00' };
+  const [, dd, mm, yyyy, hh, min] = m.map(Number);
+  const d = new Date(yyyy, mm - 1, dd, hh, min, 0, 0);
+  if (d.getDate() !== dd || d.getMonth() !== mm - 1) return { error: 'Die datum bestaat niet' };
+  if (d.getTime() <= Date.now()) return { error: 'Kies een moment in de toekomst' };
+  const maxMs = Date.now() + MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000;
+  if (d.getTime() > maxMs) return { error: 'Je kunt maximaal een jaar vooruit plannen' };
+  return d;
+}
+
+export function formatPlanDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${WEEKDAYS[d.getDay()]} ${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} om ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Hoe gaat deze planning naar Meta? (Meta accepteert max 30 dagen vooruit) */
+export function metaSyncNote(d: Date, channelIds: string[]): string | null {
+  const metaChannels = channelIds.filter((c) => c === 'instagram' || c === 'facebook' || c === 'threads');
+  if (metaChannels.length === 0) return null;
+  const days = Math.ceil((d.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  return days <= META_SYNC_WINDOW_DAYS
+    ? 'Wordt direct met Meta gesynct.'
+    : `Staat veilig in de Centi-planner en wordt automatisch met Meta gesynct zodra het binnen ${META_SYNC_WINDOW_DAYS} dagen valt (Meta zelf kan niet verder vooruit plannen).`;
+}
